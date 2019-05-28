@@ -14,7 +14,7 @@ type Grid struct {
 	MaxX      int
 	MinY      int
 	MaxY      int
-	PlayerIDS map[int]interface{}
+	PlayerIDS map[int]struct{}
 	PIDLock   sync.RWMutex
 }
 
@@ -25,15 +25,15 @@ func NewGrid(id int, minx int, maxx int, miny int, maxy int) *Grid {
 		MaxX:      maxx,
 		MinY:      miny,
 		MaxY:      maxy,
-		PlayerIDS: make(map[int]interface{}),
+		PlayerIDS: make(map[int]struct{}),
 	}
 }
 
 //添加一个玩家信息
-func (this *Grid) AddPlayer(id int, player interface{}) {
+func (this *Grid) AddPlayer(id int){
 	this.PIDLock.Lock()
 	if _, ok := this.PlayerIDS[id]; !ok {
-		this.PlayerIDS[id] = player
+		this.PlayerIDS[id] = struct{}{}
 	}
 	this.PIDLock.Unlock()
 }
