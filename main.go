@@ -13,7 +13,9 @@ func OnConnectionStart(conn ziface.IConnection) {
 	npc := core.NewPlayer(conn)
 	npc.ReturnPid()
 	npc.ReturnPlayerPosition()
-
+	//将玩家对象添加到世界管理器中
+	core.WorldMgrObj.AddPlayer(npc)
+	fmt.Println("----> player ID = ", npc.Pid, "Online...", ", Player num = ", len(core.WorldMgrObj.Players))
 
 }
 func main() {

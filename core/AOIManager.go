@@ -15,6 +15,8 @@ type AOIManager struct {
 	Grids map[int]*Grid
 }
 
+
+
 //定义初始化方法
 
 func NewAOIManager(minx int, maxx int, cntsx int, miny int, maxy int, cntsy int) *AOIManager {
