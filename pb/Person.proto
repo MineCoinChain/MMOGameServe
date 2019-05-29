@@ -1,0 +1,17 @@
+syntax = "proto3"; //定义协议版本
+package pb;
+
+message Person{
+   string Name = 1;
+   int32 age = 2;
+   repeated string emails=3;
+   repeated PhoneNumber phones=4;
+   oneof data {
+        string school = 5;
+        uint32 score = 6;
+   }
+}
+
+message PhoneNumber{
+   string PhoneNum=1;
+}

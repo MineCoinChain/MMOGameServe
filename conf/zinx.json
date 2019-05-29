@@ -1,0 +1,7 @@
+{
+  "Host":"0.0.0.0",
+  "Port":"8999",
+  "Name":"MMOGameServer",
+  "Version": "v0.4",
+  "MaxPackageSize":512
+}
