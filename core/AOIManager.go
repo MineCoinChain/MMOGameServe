@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"log"
 )
 
 type AOIManager struct {
@@ -82,45 +81,98 @@ func (this *AOIManager) GetPidToGrid(gId int) []int {
 }
 
 //根据玩家所在格子的ID查找视野内的所有玩家ID
-func (this *AOIManager) GetSurroundGridsByGid(gID int) (playerID []int) {
-	if _, ok := this.Grids[gID]; !ok {
-		log.Println("查找的ID不存在")
+//通过一个格子ID得到当前格子的周边九宫格的格子ID集合
+func (m *AOIManager) GetSurroundGridsByGid(gID int) (grids []*Grid) {
+	//判断gid是否在AOI中
+	if _, ok := m.Grids[gID]; !ok {
 		return
 	}
 
-	//定义一个存储格子ID的切片
-	var gridIDs []int
-	gridIDs = append(gridIDs, gID)
-	//获取gID所在格子的x和y坐标
-	g_x := gID % this.CntsX
-	g_y := gID / this.CntsY
+	//将当前中心GID放入九宫格切片中
+	grids = append(grids, m.Grids[gID])
 
-	if g_x > 0 {
-		gridIDs = append(gridIDs, gID-1)
+	//==== > 判读GID左边是否有格子？ 右边是否有格子
+
+	//通过格子ID 得到x轴编号 idx = gID % cntsX
+	idx := gID % m.CntsX
+
+	//判断idx编号左边是否还有格子
+	if idx > 0 {
+		//将左边的格子加入到 grids 切片中
+		grids = append(grids, m.Grids[gID-1])
 	}
 
-	if g_x < this.CntsX-1 {
-		gridIDs = append(gridIDs, gID+1)
+	//判断idx编号右边是否还有格子
+	if idx < m.CntsX-1 {
+		//将右边的格子加入到 grids 切片中
+		grids = append(grids, m.Grids[gID+1])
 	}
-	temp := gridIDs
-	if g_y > 0 {
-		for _, v := range temp {
-			gridIDs = append(gridIDs, v-this.CntsX)
+
+	// ===> 得到一个x轴的格子集合，遍历这个格子集合
+	// for ... 依次判断  格子的上面是否有格子？下面是否有格子
+
+	//将X轴全部的Grid ID 放到一个slice中 ，遍历整个slice
+	gidsX := make([]int, 0, len(grids))
+	for _, v := range grids {
+		gidsX = append(gidsX, v.GID)
+	}
+
+	for _, gid := range gidsX {
+		//10,11,12
+		//通过Gid得到当前Gid的Y轴编号
+		//idy = gID / cntsX
+		idy := gid/m.CntsX
+
+		//上方是否还有格子
+		if idy > 0 {
+			grids = append(grids, m.Grids[gid-m.CntsX])
 		}
-	}
-	if g_y < this.CntsY-1 {
-		for _, v := range temp {
-			gridIDs = append(gridIDs, v+this.CntsX)
+		//下方是否还有格子
+		if idy < m.CntsY-1 {
+			grids = append(grids, m.Grids[gid+m.CntsX])
 		}
-	}
-	//TODO 临时验证
-	fmt.Println(gridIDs)
-	for _, v := range gridIDs {
-		playerID = append(playerID, this.GetPidToGrid(v)...)
 	}
 
 	return
+}
 
+
+//通过x，y坐标得到对应的格子ID
+func (m *AOIManager) GetGidByPos(x, y float32) int {
+	if x < 0 || int(x) >= m.MaxX {
+		return -1
+	}
+	if y < 0 || int(y) >= m.MaxY {
+		return -1
+	}
+	//根据坐标 得到当前玩家所在格子ID
+	idx := (int(x) - m.MinX) / m.GetWidth()
+	idy := (int(y) - m.MinY) / m.GetHeight()
+
+	//gid  = idy*cntsX + idx
+	gid := idy * m.CntsX + idx
+
+
+	return gid
+}
+
+//根据一个坐标 得到 周边九宫格之内的全部的 玩家ID集合
+func (m *AOIManager) GetSurroundPIDsByPos(x, y float32) (playerIDs []int) {
+
+	//通过x，y得到一个格子对应的ID
+	gid := m.GetGIDByPos(x,y)
+
+	//通过格子ID 得到周边九宫格 集合
+	grids := m.GetSurroundGridsByGid(gid)
+
+	fmt.Println("gid = ", gid)
+
+	//将分别将九宫格内的全部的玩家 放在 playerIDs
+	for  _, grid := range grids {
+		playerIDs = append(playerIDs, grid.GetPlayers()...)
+	}
+
+	return
 }
 
 //根据玩家坐标确定玩家所在格子ID
