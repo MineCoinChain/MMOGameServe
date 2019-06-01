@@ -64,9 +64,7 @@ func (p *Player) SendMsg(msgID uint32, proto_struct proto.Message) error {
 	return nil
 }
 
-/*
- 服务器给客户端发送玩家初始ID
- */
+//服务器给客户端发送玩家初始ID
 func (p *Player) ReturnPid() {
 	//定义个msg:ID 1  proto数据结构
 	proto_msg := &pb.SyncPid{
@@ -97,6 +95,7 @@ func (p *Player) ReturnPlayerPosition() {
 	p.SendMsg(200, proto_msg)
 }
 
+//服务器给所有玩家发送消息
 func (p *Player) SendMsgToAll(content string) {
 	protoMsg := &pb.BroadCast{
 		Pid: p.Pid,
@@ -123,6 +122,8 @@ func (p *Player) GetSurroundingPlayers() []*Player {
 	}
 	return players
 }
+
+//服务器向周边玩家发送消息
 func (p *Player) SyncSurrounding() {
 
 	players := p.GetSurroundingPlayers()
@@ -164,8 +165,109 @@ func (p *Player) SyncSurrounding() {
 
 }
 
+//格子切换的时候更新视野
+func (p *Player) OnExchangeAoiGrid(oldGrid int, newGrid int) {
+	//获取旧的九宫格的成员
+	oldGrids := WorldMgrObj.AoiMgr.GetSurroundGridsByGid(oldGrid)
+	var oldGridsMap = make(map[int]*Grid)
+	for _, grid := range oldGrids {
+		oldGridsMap[grid.GID] = grid
+	}
+	//获取新的九宫格的成员
+	newGrids := WorldMgrObj.AoiMgr.GetSurroundGridsByGid(newGrid)
+	var newGridMap = make(map[int]*Grid)
+	for _, grid := range newGrids {
+		newGridMap[grid.GID] = grid
+	}
+
+	//处理视野消失
+	proto_leavemsg := &pb.SyncPid{
+		Pid: p.Pid,
+	}
+	//在旧的视野中出现但没有在新的视野中出现的全部玩家
+	var leaveingGids []int
+	for gid, _ := range oldGridsMap {
+		if _, ok := newGridMap[gid]; !ok {
+			leaveingGids = append(leaveingGids, gid)
+		}
+	}
+	for _, gid := range leaveingGids {
+		pids := WorldMgrObj.AoiMgr.GetPidToGrid(gid)
+		for _, pid := range pids {
+			//在其他玩家视野中消失
+			player := WorldMgrObj.GetPlayerByID(int32(pid))
+			player.SendMsg(201, proto_leavemsg)
+			//在自身视野中剔除旧的格子上的玩家
+			proto__anoleavemsg := &pb.SyncPid{
+				Pid: int32(pid),
+			}
+			p.SendMsg(201, proto__anoleavemsg)
+
+		}
+	}
+
+	//处理视野出现
+	proto_OnlineMsg := &pb.BroadCast{
+		Pid: p.Pid,
+		Tp:  2,
+		Data: &pb.BroadCast_P{
+			P: &pb.Position{
+				X: p.X,
+				Y: p.Y,
+				Z: p.Z,
+				V: p.V,
+			},
+		},
+	}
+	//在新的视野中出现的，但是在旧的九宫格中没有的玩家
+	var newAppearGird []int
+	for gid, _ := range newGridMap {
+		if _, ok := oldGridsMap[gid]; !ok {
+			newAppearGird = append(newAppearGird, gid)
+		}
+	}
+
+	for _, gid := range newAppearGird {
+		pids:=WorldMgrObj.AoiMgr.GetPidToGrid(gid)
+
+		for _,pid:=range pids{
+			//让自己出现在其他人视野中
+			player:=WorldMgrObj.GetPlayerByID(int32(pid))
+			player.SendMsg(200, proto_OnlineMsg)
+
+			//让其他人出现在自己的视野中
+			another_online_msg := &pb.BroadCast{
+				Pid:player.Pid,
+				Tp:2,
+				Data:&pb.BroadCast_P{
+					&pb.Position{
+						X:player.X,
+						Y:player.Y,
+						Z:player.Z,
+						V:player.V,
+					},
+				},
+			}
+
+			p.SendMsg(200, another_online_msg)
+		}
+
+	}
+
+}
+
 //更新位置信息
 func (p *Player) UpdatePosition(X, Y, Z, V float32) {
+	oldGrid := WorldMgrObj.AoiMgr.GetGIDByPos(p.X, p.Z)
+	newGrid := WorldMgrObj.AoiMgr.GetGIDByPos(X, Z)
+	if oldGrid != newGrid {
+		//将旧的PID从网格中删除
+		WorldMgrObj.AoiMgr.DeletePIDByPos(int(p.Pid), p.X, p.Z)
+		//将新的PID添加到网格中
+		WorldMgrObj.AoiMgr.AddPidToGrid(int(p.Pid), newGrid)
+		//视野消失的业务
+		p.OnExchangeAoiGrid(oldGrid, newGrid)
+	}
 	//获取周围玩家集合
 	players := p.GetSurroundingPlayers()
 	p.X = X
@@ -192,7 +294,7 @@ func (p *Player) UpdatePosition(X, Y, Z, V float32) {
 
 }
 
-//玩家下线函数
+//玩家下线通知
 func (p *Player) OffLine() {
 	proto_msg := &pb.SyncPid{
 		Pid: p.Pid,
@@ -204,7 +306,6 @@ func (p *Player) OffLine() {
 	//将玩家从地图抹除
 	WorldMgrObj.RemovePlayerByID(p.Pid)
 	//将玩家从世界管理器消除
-	WorldMgrObj.AoiMgr.DeletePIDByPos(int(p.Pid),p.X,p.Z)
-
+	WorldMgrObj.AoiMgr.DeletePIDByPos(int(p.Pid), p.X, p.Z)
 
 }

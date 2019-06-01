@@ -14,8 +14,6 @@ const (
 	AOI_CNTS_Y int = 20
 )
 
-
-
 //当前场景的世界管理模块
 type WorldManager struct {
 	//当前全部在线的Player集合
@@ -97,3 +95,4 @@ func (this *WorldManager) GetAllPlayers() [] *Player {
 
 	return onLinePlayer
 }
+

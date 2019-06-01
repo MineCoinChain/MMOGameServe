@@ -15,9 +15,7 @@ type AOIManager struct {
 }
 
 
-
 //定义初始化方法
-
 func NewAOIManager(minx int, maxx int, cntsx int, miny int, maxy int, cntsy int) *AOIManager {
 	aoiMgr := &AOIManager{
 		MinX:  minx,
@@ -56,6 +54,7 @@ func (this *AOIManager) GetHeight() int {
 	return (this.MaxY - this.MinY) / this.CntsY
 }
 
+//输出函数的方法
 func (this *AOIManager) String() string {
 	s := fmt.Sprintf("AOIManager : \n MinX:%d,MaxX:%d,cntsX:%d, minY:%d, maxY:%d,cntsY:%d, Grids inManager:\n",
 		this.MinX, this.MaxX, this.CntsX, this.MinY, this.MaxY, this.CntsY)
@@ -135,7 +134,6 @@ func (m *AOIManager) GetSurroundGridsByGid(gID int) (grids []*Grid) {
 
 	return
 }
-
 
 //通过x，y坐标得到对应的格子ID
 func (m *AOIManager) GetGidByPos(x, y float32) int {

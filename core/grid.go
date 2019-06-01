@@ -18,6 +18,7 @@ type Grid struct {
 	PIDLock   sync.RWMutex
 }
 
+//格子类的初始化方法
 func NewGrid(id int, minx int, maxx int, miny int, maxy int) *Grid {
 	return &Grid{
 		GID:       id,
@@ -60,3 +61,4 @@ func (this *Grid) String() string {
 	return fmt.Sprintf("Grid id : %d, minX:%d, maxX:%d , minY:%d, maxY:%d, playerIDs:%v\n",
 		this.GID, this.MinX, this.MaxX, this.MinY, this.MaxY, this.PlayerIDS)
 }
+
