@@ -38,7 +38,7 @@ func NewPlayer(conn ziface.IConnection) *Player {
 		Pid:  id,
 		Conn: conn,
 		X:    float32(160 + rand.Intn(10)), //随机生成玩家上线所在的x轴坐标
-		Y:    0,
+		Y:    100,
 		Z:    float32(140 + rand.Intn(10)), //随机在140坐标点附近 y轴坐标上线
 		V:    0,                            //角度为0
 	}
